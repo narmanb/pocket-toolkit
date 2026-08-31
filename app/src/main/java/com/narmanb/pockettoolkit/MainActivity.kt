@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -263,7 +262,7 @@ private fun DuplicateGroupCard(group: DuplicateGroup, onDelete: (ScannedFile) ->
             group.files.forEachIndexed { index, file ->
                 if (index > 0) HorizontalDivider()
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.fillMaxWidth(0.72f)) {
                         Text(file.name)
                         Text(file.parentName ?: "Selected folder", style = MaterialTheme.typography.bodySmall)
                     }
@@ -417,7 +416,7 @@ private fun SummaryCard(title: String, lines: List<String>) {
 private fun FileRow(file: ScannedFile) {
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column(Modifier.weight(1f)) { Text(file.name); Text(file.parentName ?: "", style = MaterialTheme.typography.bodySmall) }
+            Column(Modifier.fillMaxWidth(0.72f)) { Text(file.name); Text(file.parentName ?: "", style = MaterialTheme.typography.bodySmall) }
             Text(DiagnosticsCollector.formatBytes(file.size))
         }
     }
