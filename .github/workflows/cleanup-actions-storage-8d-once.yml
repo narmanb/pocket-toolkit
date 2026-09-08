@@ -1,0 +1,21 @@
+name: Cleanup Actions Storage Older Than 8 Days
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/cleanup-actions-storage-8d-once.yml']
+permissions: {contents: read, actions: write}
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup
+        env: {GH_TOKEN: '${{ github.token }}'}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cutoff=$(date -u -d '8 days ago' +%s); ab=0; cb=0; ac=0; cc=0; af=$(mktemp); cf=$(mktemp)
+          p=1; while :; do j=$(gh api "/repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100&page=$p"); n=$(jq '.artifacts|length'<<<"$j"); jq -r '.artifacts[]|[.id,.size_in_bytes,.created_at]|@tsv'<<<"$j">>"$af"; [ "$n" -lt 100 ]&&break; p=$((p+1)); done
+          while IFS=$'\t' read -r id s t; do [ -z "${id:-}" ]&&continue; e=$(date -u -d "$t" +%s); if [ "$e" -lt "$cutoff" ]; then gh api --method DELETE "/repos/$GITHUB_REPOSITORY/actions/artifacts/$id"; ab=$((ab+s)); ac=$((ac+1)); fi; done<"$af"
+          p=1; while :; do j=$(gh api "/repos/$GITHUB_REPOSITORY/actions/caches?per_page=100&page=$p"); n=$(jq '.actions_caches|length'<<<"$j"); jq -r '.actions_caches[]|[.id,.size_in_bytes,.created_at,.last_accessed_at]|@tsv'<<<"$j">>"$cf"; [ "$n" -lt 100 ]&&break; p=$((p+1)); done
+          while IFS=$'\t' read -r id s c l; do [ -z "${id:-}" ]&&continue; t=${l:-$c}; e=$(date -u -d "$t" +%s); if [ "$e" -lt "$cutoff" ]; then gh api --method DELETE "/repos/$GITHUB_REPOSITORY/actions/caches/$id"; cb=$((cb+s)); cc=$((cc+1)); fi; done<"$cf"
+          echo "CLEANUP_SUMMARY repo=$GITHUB_REPOSITORY artifacts_count=$ac artifacts_bytes=$ab caches_count=$cc caches_bytes=$cb total_bytes=$((ab+cb))"
